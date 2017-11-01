@@ -17,7 +17,7 @@ import java.io.InputStream;
 /**
  * Created by xiaoliang on 2015/12/7 11:20
  */
-public class HttpRequester {
+public class HttpRequester implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpRequester.class);
 
@@ -25,6 +25,20 @@ public class HttpRequester {
     protected InputStream inputStream = null;
     protected HttpResponse response = null;
     protected HttpClientContext context = HttpClientContext.create();
+
+    private String requestUrl = null;
+
+    public HttpRequester(String requestUrl) {
+        this.requestUrl = requestUrl;
+    }
+
+    public void run() {
+        try {
+            doGet(requestUrl);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void init(int timeout) {
         RequestConfig requestConfig = RequestConfig.DEFAULT;
@@ -56,19 +70,12 @@ public class HttpRequester {
     public InputStream doGet(String url) throws IOException {
         StringBuffer sb = new StringBuffer();
         HttpGet httpGet = new HttpGet(url);
+        response = httpclient.execute(httpGet, context);
 
-        try {
-            response = httpclient.execute(httpGet, context);
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                inputStream = entity.getContent();
-            }
-
-        } catch (IOException e) {
-            logger.error("get connection error : advertiser interface url" + sb.toString(), e);
+        HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            inputStream = entity.getContent();
         }
-
         return inputStream;
     }
 }
