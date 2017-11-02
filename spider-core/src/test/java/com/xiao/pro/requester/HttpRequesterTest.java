@@ -16,7 +16,7 @@ public class HttpRequesterTest {
 
     @Before
     public void init() {
-        httpRequester = new HttpRequester("http://www.xuexi111.com");
+//        httpRequester = new HttpRequester();
         httpRequester.init(30000);
     }
 

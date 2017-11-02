@@ -28,7 +28,7 @@ public class HtmlParserTest {
 
     @Before
     public void init() {
-        httpRequester = new HttpRequester();
+//        httpRequester = new HttpRequester("http://www.xuexi111.com");
         httpRequester.init(30000);
     }
 

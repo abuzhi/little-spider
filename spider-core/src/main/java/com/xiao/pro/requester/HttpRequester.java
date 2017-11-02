@@ -1,5 +1,8 @@
 package com.xiao.pro.requester;
 
+import com.xiao.pro.parser.HtmlParser;
+import com.xiao.pro.utils.EncryptMD5;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -13,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Queue;
 
 /**
  * Created by xiaoliang on 2015/12/7 11:20
@@ -22,21 +27,40 @@ public class HttpRequester implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(HttpRequester.class);
 
     protected CloseableHttpClient httpclient = null;
-    protected InputStream inputStream = null;
-    protected HttpResponse response = null;
     protected HttpClientContext context = HttpClientContext.create();
 
-    private String requestUrl = null;
+    private Queue<String> queue;
+    private Map<String, String> paserMap;
 
-    public HttpRequester(String requestUrl) {
-        this.requestUrl = requestUrl;
+    public HttpRequester(Queue<String> queue, Map<String, String> paserMap) {
+        this.queue = queue;
+        this.paserMap = paserMap;
     }
 
     public void run() {
-        try {
-            doGet(requestUrl);
-        } catch (IOException e) {
-            e.printStackTrace();
+        while (true) {
+            if (!queue.isEmpty()) {
+                String url = queue.poll();
+                String md5 = EncryptMD5.md5(url);
+                try {
+                    InputStream inputStream = doGet(url);
+                    boolean isok = HtmlParser.parserHtml(inputStream);
+                    if (isok) {
+                        paserMap.put(md5, "ok");
+                    }
+                    logger.info("do url = " + url);
+                } catch (IOException e) {
+                    logger.error("do get error : ", e);
+                }
+
+
+            } else {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    logger.error("do sleep error : ", e);
+                }
+            }
         }
     }
 
@@ -68,7 +92,8 @@ public class HttpRequester implements Runnable {
     }
 
     public InputStream doGet(String url) throws IOException {
-        StringBuffer sb = new StringBuffer();
+        InputStream inputStream = null;
+        HttpResponse response = null;
         HttpGet httpGet = new HttpGet(url);
         response = httpclient.execute(httpGet, context);
 
