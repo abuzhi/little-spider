@@ -1,8 +1,5 @@
 package com.xiao.pro.requester;
 
-import com.xiao.pro.parser.HtmlParser;
-import com.xiao.pro.utils.EncryptMD5;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -16,53 +13,62 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Queue;
 
 /**
  * Created by xiaoliang on 2015/12/7 11:20
  */
-public class HttpRequester implements Runnable {
+public class HttpRequester{
 
     private static final Logger logger = LoggerFactory.getLogger(HttpRequester.class);
 
     protected CloseableHttpClient httpclient = null;
     protected HttpClientContext context = HttpClientContext.create();
-
-    private Queue<String> queue;
-    private Map<String, String> paserMap;
-
-    public HttpRequester(Queue<String> queue, Map<String, String> paserMap) {
-        this.queue = queue;
-        this.paserMap = paserMap;
-    }
-
-    public void run() {
-        while (true) {
-            if (!queue.isEmpty()) {
-                String url = queue.poll();
-                String md5 = EncryptMD5.md5(url);
-                try {
-                    InputStream inputStream = doGet(url);
-                    boolean isok = HtmlParser.parserHtml(inputStream);
-                    if (isok) {
-                        paserMap.put(md5, "ok");
-                    }
-                    logger.info("do url = " + url);
-                } catch (IOException e) {
-                    logger.error("do get error : ", e);
-                }
-
-
-            } else {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    logger.error("do sleep error : ", e);
-                }
-            }
-        }
-    }
+//
+//    private Queue<String> queue;
+//    private Map<String, String> paserMap;
+//
+//    public HttpRequester(Queue<String> queue, Map<String, String> paserMap) {
+//        this.queue = queue;
+//        this.paserMap = paserMap;
+//    }
+//
+//    public void run() {
+//        while (true) {
+//            if (!queue.isEmpty()) {
+//                String url = queue.poll();
+//                String md5 = EncryptMD5.md5(url);
+//                if (paserMap.containsKey(md5)) {
+//                    continue;
+//                }
+//
+//                try {
+//                    Document doc = Jsoup.connect(url).get();
+//                    Element content = doc.body();
+//                    Elements links = content.getElementsByTag("a");
+//
+//                    for (Element link : links) {
+//                        String linkHref = link.attr("href");
+//                        String linkText = link.text();
+//                        String md5_href = EncryptMD5.md5(linkHref);
+//                        queue.add(linkHref);
+//                        paserMap.put(md5_href,"ok");
+//                        logger.info("text=" + linkText + " , href=" + linkHref);
+//                    }
+//
+//                } catch (IOException e) {
+//                    logger.error("do get error : ", e);
+//                }
+//
+//
+//            } else {
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    logger.error("do sleep error : ", e);
+//                }
+//            }
+//        }
+//    }
 
     public void init(int timeout) {
         RequestConfig requestConfig = RequestConfig.DEFAULT;

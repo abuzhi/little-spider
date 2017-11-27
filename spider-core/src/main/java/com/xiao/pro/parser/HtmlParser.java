@@ -1,5 +1,6 @@
 package com.xiao.pro.parser;
 
+import com.xiao.pro.utils.EncryptMD5;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by xiaoliang on 2017/10/30.
@@ -19,39 +21,39 @@ public class HtmlParser {
 
     public static final Logger logger = LoggerFactory.getLogger(HtmlParser.class);
 
-    private Queue<String> queue;
-    private Map<String,String> paserMap;
+    public boolean producer(BlockingQueue<String> queue, Map<String,String> paserMap) {
+        String url = queue.poll();
+        String md5 = EncryptMD5.md5(url);
+        if (paserMap.containsKey(md5)) {
+            return false;
+        }
+        if(!url.contains("http://www.xuexi111.com") || !url.contains("ed2k://|file|")){
+            logger.info("not pattern url = "+url);
+            return false;
+        }
 
-    public HtmlParser(Queue<String> queue,Map<String,String> paserMap) {
-        this.queue = queue;
-        this.paserMap = paserMap;
+        try {
+            Document doc = Jsoup.connect(url).get();
+            Element content = doc.body();
+            Elements links = content.getElementsByTag("a");
+            for (Element link : links) {
+                String linkHref = link.attr("href");
+                String linkText = link.text();
+                String md5_href = EncryptMD5.md5(linkHref);
+                queue.offer(linkHref);
+                paserMap.put(md5_href,"ok");
+                logger.info("text=" + linkText + " , href=" + linkHref);
+            }
+        } catch (IOException e) {
+            logger.error("do get error : ", e);
+        }
+
+        return true;
     }
 
-    public static boolean parserHtml(InputStream  data) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        Reader reader = new InputStreamReader(data);
-        BufferedReader br = new BufferedReader(reader);
-        String line = br.readLine();
-        while (line != null) {
-            sb.append(line);
-            line = br.readLine();
-        }
+    public boolean consumer(BlockingQueue<String> queue, Map<String,String> paserMap){
+        String url = queue.poll();
 
-        Document doc = Jsoup.parse(sb.toString());
-        Element content = doc.body();
-        Elements links = content.getElementsByTag("a");
-        for (Element link : links) {
-            String linkHref = link.attr("href");
-            String linkText = link.text();
-            logger.info("text="+linkText + " , href="+linkHref);
-            //TODO process url
-        }
-
-
-        if(StringUtils.isBlank(paserMap.get(md5))){
-
-        }
-
+        return false;
     }
-
 }
